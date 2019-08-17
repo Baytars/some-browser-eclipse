@@ -1,6 +1,9 @@
 package cn.gedobu.some.embeded.browser.parts;
 
+import java.net.URI;
+
 import javax.annotation.PostConstruct;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTError;
 import org.eclipse.swt.browser.Browser;
@@ -16,6 +19,15 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.IPartListener;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.FileStoreEditorInput;
 
 public class SoMeBrowserView {
 	@PostConstruct
@@ -89,6 +101,7 @@ public class SoMeBrowserView {
 				browser.refresh();
 			else if (string.equals("Go"))
 				browser.setUrl(location.getText());
+				System.out.println(getActiveFileName());
 		};
 		browser.addProgressListener(new ProgressListener() {
 			@Override
@@ -115,5 +128,77 @@ public class SoMeBrowserView {
 		location.addListener(SWT.DefaultSelection, e -> browser.setUrl(location.getText()));
 
 		browser.setUrl("microsoft.com");
+		
+		System.out.println("Adding listener to editor ...");
+		try {
+			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			IWorkbenchPage page = window.getActivePage();
+			page.addPartListener(new IPartListener() {
+				
+				@Override
+				public void partOpened(IWorkbenchPart arg0) {
+					System.out.println("partOpened: "+getActiveFileName()+"\n");
+				}
+				
+				@Override
+				public void partDeactivated(IWorkbenchPart arg0) {
+					System.out.println("partDeactivated: "+getActiveFileName()+"\n");
+				}
+				
+				@Override
+				public void partClosed(IWorkbenchPart arg0) {
+					System.out.println("partClosed: "+getActiveFileName()+"\n");
+				}
+				
+				@Override
+				public void partBroughtToTop(IWorkbenchPart arg0) {
+					System.out.println("partBroughtToTop: "+getActiveFileName()+"\n");
+				}
+				
+				@Override
+				public void partActivated(IWorkbenchPart arg0) {
+					System.out.println("partActivated: "+getActiveFileName()+"\n");
+					String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
+//					System.out.println(workspaceRoot);
+					IEditorInput input = page.getActiveEditor().getEditorInput();
+					
+					if (input instanceof FileStoreEditorInput) {
+						URI file = ((FileStoreEditorInput)input).getURI();
+						browser.setUrl("file://"+file.getPath());
+					}
+					else if(input instanceof IFileEditorInput){
+						URI file = ((IFileEditorInput)input).getFile().getLocationURI();
+//						System.out.println(file);
+						System.out.println(file.getRawPath());
+//						System.out.println(file.toString());
+//						IProject project = file.getProject(); 
+//						System.out.println(project.getFullPath().makeAbsolute().toOSString());;
+//						String relaFilePath = file.getFullPath().makeAbsolute().toOSString();
+//						String fullStr = "file://"+workspaceRoot+relaFilePath;
+//						System.out.println(fullStr);
+						browser.setUrl("file://"+file.getRawPath());
+						
+					}
+				}
+			});
+		}
+		catch (Exception e) {
+			System.out.println("Error trying to add listener to page: "+e.getMessage());
+		}
+	}
+	
+	public String getActiveFileName() {
+		try {
+//			System.out.println("Getting active file name");
+			IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+			String activeFileName = editor.getTitle();
+//			System.out.println("The active file name is: "+activeFileName);
+			return activeFileName;
+		}
+		catch (Exception e) {
+			System.out.println("Error occurred when getting active file name!");
+			return e.getMessage();
+		}
+		
 	}
 }
