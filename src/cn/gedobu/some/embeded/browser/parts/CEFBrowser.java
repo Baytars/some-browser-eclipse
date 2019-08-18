@@ -1,10 +1,13 @@
 package cn.gedobu.some.embeded.browser.parts;
 
 import org.eclipse.swt.widgets.Composite;
+
 import java.net.URI;
 
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTError;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.browser.ProgressListener;
@@ -62,23 +65,7 @@ public class CEFBrowser {
 		data.grabExcessHorizontalSpace = true;
 		location.setLayoutData(data);
 
-		final Browser browser;
-		try {
-			browser = new Browser(parent, SWT.NONE);
-		} catch (SWTError e) {
-			System.out.println("Could not instantiate Browser: " + e.getMessage());
-			parent.dispose();
-			return;
-		}
-		data = new GridData();
-		data.horizontalAlignment = GridData.FILL;
-		data.verticalAlignment = GridData.FILL;
-		data.horizontalSpan = 3;
-		data.grabExcessHorizontalSpace = true;
-		data.grabExcessVerticalSpace = true;
-		browser.setLayoutData(data);
-		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());;
-		browser.setJavascriptEnabled(true);
+		Browser browser = establishBrowserIn(parent);
 
 		final Label status = new Label(parent, SWT.NONE);
 		data = new GridData(GridData.FILL_HORIZONTAL);
@@ -130,12 +117,31 @@ public class CEFBrowser {
 		itemGo.addListener(SWT.Selection, listener);
 		location.addListener(SWT.DefaultSelection, e -> browser.setUrl(location.getText()));
 
-		browser.setUrl("microsoft.com");
+		browser.setUrl("about:blank");
 		
+		bindEditorChangeTo(browser);
+	}
+	
+	private Browser establishBrowserIn(Composite parent) {
+		final Browser browser;
+		browser = new Browser(parent, SWT.NONE);
+		GridData data = new GridData();
+		data.horizontalAlignment = GridData.FILL;
+		data.verticalAlignment = GridData.FILL;
+		data.horizontalSpan = 3;
+		data.grabExcessHorizontalSpace = true;
+		data.grabExcessVerticalSpace = true;
+		browser.setLayoutData(data);
+		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());;
+		browser.setJavascriptEnabled(true);
+		return browser;
+	}
+	
+	private void bindEditorChangeTo(Browser browser) {
 		System.out.println("Adding listener to editor ...");
+		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+		IWorkbenchPage page = window.getActivePage();
 		try {
-			IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-			IWorkbenchPage page = window.getActivePage();
 			page.addPartListener(new IPartListener() {
 				
 				@Override
@@ -159,28 +165,23 @@ public class CEFBrowser {
 				}
 				
 				@Override
-				public void partActivated(IWorkbenchPart arg0) {
+				public void partActivated(IWorkbenchPart activePart) {
+					System.out.println("Active part is: " + activePart.getClass().getName());
+					System.out.println("Text editor class name: " + page.getActiveEditor().getClass().getName());
 					System.out.println("partActivated: "+getActiveFileName()+"\n");
 //					String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
 //					System.out.println(workspaceRoot);
 					IEditorInput input = page.getActiveEditor().getEditorInput();
-					
-					if (input instanceof FileStoreEditorInput) {
-						URI file = ((FileStoreEditorInput)input).getURI();
-						browser.setUrl("file://"+file.getPath());
-					}
-					else if(input instanceof IFileEditorInput){
-						URI file = ((IFileEditorInput)input).getFile().getLocationURI();
-//						System.out.println(file);
-						System.out.println(file.getRawPath());
-//						System.out.println(file.toString());
-//						IProject project = file.getProject(); 
-//						System.out.println(project.getFullPath().makeAbsolute().toOSString());;
-//						String relaFilePath = file.getFullPath().makeAbsolute().toOSString();
-//						String fullStr = "file://"+workspaceRoot+relaFilePath;
-//						System.out.println(fullStr);
-						browser.setUrl("file://"+file.getRawPath());
-						
+					String pathWithProtocol = "file://"+getFileAbsolutePath(input);
+//					System.out.println("location text: " + location.getText());
+					System.out.println("pathWithProtocol: " + pathWithProtocol);
+					System.out.println("browser url: " + browser.getUrl());
+					if ( activePart.getClass().getName().equals(page.getActiveEditor().getClass().getName()) ) {
+						if ( ! browser.getUrl().equals(pathWithProtocol) ) {
+							if ( pathWithProtocol.endsWith(".html") ) {
+								browser.setUrl(pathWithProtocol);
+							}
+						}
 					}
 				}
 			});
@@ -188,6 +189,40 @@ public class CEFBrowser {
 		catch (Exception e) {
 			System.out.println("Error trying to add listener to page: "+e.getMessage());
 		}
+		
+		try {
+			ResourcesPlugin.getWorkspace().addResourceChangeListener(new IResourceChangeListener() {
+				
+				@Override
+				public void resourceChanged(IResourceChangeEvent event) {
+					System.out.println("Resource has changed: "+event.toString());
+					browser.refresh();
+				}
+			});
+		}
+		catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private String getFileAbsolutePath(IEditorInput input) {
+		String absPath = "about:blank";
+		if (input instanceof FileStoreEditorInput) {
+			URI file = ((FileStoreEditorInput)input).getURI();
+			absPath = file.getPath();
+		}
+		else if(input instanceof IFileEditorInput){
+			URI file = ((IFileEditorInput)input).getFile().getLocationURI();
+//			System.out.println(file);
+//			System.out.println(file.toString());
+//			IProject project = file.getProject(); 
+//			System.out.println(project.getFullPath().makeAbsolute().toOSString());;
+//			String relaFilePath = file.getFullPath().makeAbsolute().toOSString();
+//			String fullStr = "file://"+workspaceRoot+relaFilePath;
+//			System.out.println(fullStr);
+			absPath = file.getRawPath();
+		}
+		return absPath;
 	}
 	
 	private String getActiveFileName() {
