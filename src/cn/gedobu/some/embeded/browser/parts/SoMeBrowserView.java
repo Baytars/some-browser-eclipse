@@ -6,6 +6,6 @@ import org.eclipse.swt.widgets.Composite;
 public class SoMeBrowserView {
 	@PostConstruct
 	public void createPartControl(Composite parent) {
-		new CEFBrowser(parent);
+		new LiveBrowserWindow(parent);
 	}
 }

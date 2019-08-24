@@ -8,10 +8,11 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.browser.ProgressListener;
-import org.eclipse.swt.chromium.Browser;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.layout.GridData;
@@ -32,15 +33,23 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 
-public class CEFBrowser {
-	public CEFBrowser(Composite parent) {
+import cn.gedobu.some.embeded.browser.live.CEFBrowser;
+import cn.gedobu.some.embeded.browser.live.LiveBrowser;
+import cn.gedobu.some.embeded.browser.live.SWTBrowser;
+
+public class LiveBrowserWindow {
+	public LiveBrowserWindow(Composite parent) {
 		this.establish(parent);
 	}
 	
-	private void establish(Composite parent) {
+	private void decorateParent(Composite parent) {
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 3;
 		parent.setLayout(gridLayout);
+	}
+	
+	private void establish(Composite parent) {
+		decorateParent(parent);
 		ToolBar toolbar = new ToolBar(parent, SWT.NONE);
 		ToolItem itemBack = new ToolItem(toolbar, SWT.PUSH);
 		itemBack.setText("Back");
@@ -67,7 +76,7 @@ public class CEFBrowser {
 		data.grabExcessHorizontalSpace = true;
 		location.setLayoutData(data);
 
-		Browser browser = establishBrowserIn(parent);
+		LiveBrowser browser = establishBrowserIn(parent);
 
 		final Label status = new Label(parent, SWT.NONE);
 		data = new GridData(GridData.FILL_HORIZONTAL);
@@ -108,10 +117,19 @@ public class CEFBrowser {
 			}
 		});
 		browser.addStatusTextListener(event -> status.setText(event.text));
-		browser.addLocationListener(LocationListener.changedAdapter(event -> {
+		browser.addLocationListener(new LocationListener() {
+			
+			@Override
+			public void changing(LocationEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void changed(LocationEvent event) {
 				if (event.top) location.setText(event.location);
 			}
-		));
+		});
 		itemBack.addListener(SWT.Selection, listener);
 		itemForward.addListener(SWT.Selection, listener);
 		itemStop.addListener(SWT.Selection, listener);
@@ -124,22 +142,18 @@ public class CEFBrowser {
 		bindEditorChangeTo(browser);
 	}
 	
-	private Browser establishBrowserIn(Composite parent) {
-		final Browser browser;
-		browser = new Browser(parent, SWT.NONE);
-		GridData data = new GridData();
-		data.horizontalAlignment = GridData.FILL;
-		data.verticalAlignment = GridData.FILL;
-		data.horizontalSpan = 3;
-		data.grabExcessHorizontalSpace = true;
-		data.grabExcessVerticalSpace = true;
-		browser.setLayoutData(data);
-		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());;
-		browser.setJavascriptEnabled(true);
-		return browser;
+	private LiveBrowser establishBrowserIn(Composite parent) {
+		try {
+			LiveBrowser browser = new SWTBrowser(parent);
+			return browser;
+		}
+		catch (Exception e) {
+			LiveBrowser browser = new CEFBrowser(parent);
+			return browser;
+		}
 	}
 	
-	private IPartListener syncPageToBrowser(IWorkbenchPage page, Browser browser) {
+	private IPartListener syncPageToBrowser(IWorkbenchPage page, LiveBrowser browser) {
 		IPartListener pageListener = new IPartListener() {
 			
 			@Override
@@ -187,7 +201,7 @@ public class CEFBrowser {
 		return pageListener;
 	}
 	
-	private IResourceChangeListener syncResourceChangeToBrowser(Browser browser) {
+	private IResourceChangeListener syncResourceChangeToBrowser(LiveBrowser browser) {
 		IResourceChangeListener resListener = new IResourceChangeListener() {
 			
 			@Override
@@ -200,7 +214,7 @@ public class CEFBrowser {
 		return resListener;
 	}
 	
-	private void bindEditorChangeTo(Browser browser) {
+	private void bindEditorChangeTo(LiveBrowser browser) {
 		System.out.println("Adding listener to editor ...");
 		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		IWorkbenchPage page = window.getActivePage();
