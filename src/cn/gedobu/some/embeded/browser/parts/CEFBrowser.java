@@ -12,6 +12,8 @@ import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressEvent;
 import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.chromium.Browser;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Label;
@@ -137,72 +139,82 @@ public class CEFBrowser {
 		return browser;
 	}
 	
+	private IPartListener syncPageToBrowser(IWorkbenchPage page, Browser browser) {
+		IPartListener pageListener = new IPartListener() {
+			
+			@Override
+			public void partOpened(IWorkbenchPart arg0) {
+				System.out.println("partOpened: "+getActiveFileName()+"\n");
+			}
+			
+			@Override
+			public void partDeactivated(IWorkbenchPart arg0) {
+				System.out.println("partDeactivated: "+getActiveFileName()+"\n");
+			}
+			
+			@Override
+			public void partClosed(IWorkbenchPart arg0) {
+				System.out.println("partClosed: "+getActiveFileName()+"\n");
+			}
+			
+			@Override
+			public void partBroughtToTop(IWorkbenchPart arg0) {
+				System.out.println("partBroughtToTop: "+getActiveFileName()+"\n");
+			}
+			
+			@Override
+			public void partActivated(IWorkbenchPart activePart) {
+				System.out.println("Active part is: " + activePart.getClass().getName());
+				System.out.println("Text editor class name: " + page.getActiveEditor().getClass().getName());
+				System.out.println("partActivated: "+getActiveFileName()+"\n");
+//				String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
+//				System.out.println(workspaceRoot);
+				IEditorInput input = page.getActiveEditor().getEditorInput();
+				String pathWithProtocol = "file://"+getFileAbsolutePath(input);
+//				System.out.println("location text: " + location.getText());
+				System.out.println("pathWithProtocol: " + pathWithProtocol);
+				System.out.println("browser url: " + browser.getUrl());
+				if ( activePart.getClass().getName().equals(page.getActiveEditor().getClass().getName()) ) {
+					if ( ! browser.getUrl().equals(pathWithProtocol) ) {
+						if ( pathWithProtocol.endsWith(".html") ) {
+							browser.setUrl(pathWithProtocol);
+						}
+					}
+				}
+			}
+		};
+		page.addPartListener(pageListener);
+		return pageListener;
+	}
+	
+	private IResourceChangeListener syncResourceChangeToBrowser(Browser browser) {
+		IResourceChangeListener resListener = new IResourceChangeListener() {
+			
+			@Override
+			public void resourceChanged(IResourceChangeEvent event) {
+				System.out.println("Resource has changed: "+event.toString());
+				browser.refresh();
+			}
+		};
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(resListener);
+		return resListener;
+	}
+	
 	private void bindEditorChangeTo(Browser browser) {
 		System.out.println("Adding listener to editor ...");
 		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		IWorkbenchPage page = window.getActivePage();
-		try {
-			page.addPartListener(new IPartListener() {
-				
-				@Override
-				public void partOpened(IWorkbenchPart arg0) {
-					System.out.println("partOpened: "+getActiveFileName()+"\n");
-				}
-				
-				@Override
-				public void partDeactivated(IWorkbenchPart arg0) {
-					System.out.println("partDeactivated: "+getActiveFileName()+"\n");
-				}
-				
-				@Override
-				public void partClosed(IWorkbenchPart arg0) {
-					System.out.println("partClosed: "+getActiveFileName()+"\n");
-				}
-				
-				@Override
-				public void partBroughtToTop(IWorkbenchPart arg0) {
-					System.out.println("partBroughtToTop: "+getActiveFileName()+"\n");
-				}
-				
-				@Override
-				public void partActivated(IWorkbenchPart activePart) {
-					System.out.println("Active part is: " + activePart.getClass().getName());
-					System.out.println("Text editor class name: " + page.getActiveEditor().getClass().getName());
-					System.out.println("partActivated: "+getActiveFileName()+"\n");
-//					String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
-//					System.out.println(workspaceRoot);
-					IEditorInput input = page.getActiveEditor().getEditorInput();
-					String pathWithProtocol = "file://"+getFileAbsolutePath(input);
-//					System.out.println("location text: " + location.getText());
-					System.out.println("pathWithProtocol: " + pathWithProtocol);
-					System.out.println("browser url: " + browser.getUrl());
-					if ( activePart.getClass().getName().equals(page.getActiveEditor().getClass().getName()) ) {
-						if ( ! browser.getUrl().equals(pathWithProtocol) ) {
-							if ( pathWithProtocol.endsWith(".html") ) {
-								browser.setUrl(pathWithProtocol);
-							}
-						}
-					}
-				}
-			});
-		}
-		catch (Exception e) {
-			System.out.println("Error trying to add listener to page: "+e.getMessage());
-		}
 		
-		try {
-			ResourcesPlugin.getWorkspace().addResourceChangeListener(new IResourceChangeListener() {
-				
-				@Override
-				public void resourceChanged(IResourceChangeEvent event) {
-					System.out.println("Resource has changed: "+event.toString());
-					browser.refresh();
-				}
-			});
-		}
-		catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
+		IPartListener pageListener = syncPageToBrowser(page, browser);
+		IResourceChangeListener resListener = syncResourceChangeToBrowser(browser);
+		
+		browser.addDisposeListener(new DisposeListener() {
+			@Override
+			public void widgetDisposed(DisposeEvent event) {
+				page.removePartListener(pageListener);
+				ResourcesPlugin.getWorkspace().removeResourceChangeListener(resListener);
+			}
+		});
 	}
 	
 	private String getFileAbsolutePath(IEditorInput input) {
