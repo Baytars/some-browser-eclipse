@@ -38,6 +38,8 @@ import cn.gedobu.some.embeded.browser.live.LiveBrowser;
 import cn.gedobu.some.embeded.browser.live.SWTBrowser;
 
 public class LiveBrowserWindow {
+	private boolean isLocked = false;
+	
 	public LiveBrowserWindow(Composite parent) {
 		this.establish(parent);
 	}
@@ -61,6 +63,8 @@ public class LiveBrowserWindow {
 		itemRefresh.setText("Refresh");
 		ToolItem itemGo = new ToolItem(toolbar, SWT.PUSH);
 		itemGo.setText("Go");
+		ToolItem itemLock = new ToolItem(toolbar, SWT.PUSH);
+		itemLock.setText("Lock Off");
 
 		GridData data = new GridData();
 		data.horizontalSpan = 3;
@@ -92,17 +96,34 @@ public class LiveBrowserWindow {
 		Listener listener = event -> {
 			ToolItem item = (ToolItem) event.widget;
 			String string = item.getText();
-			if (string.equals("Back"))
-				browser.back();
-			else if (string.equals("Forward"))
-				browser.forward();
-			else if (string.equals("Stop"))
-				browser.stop();
-			else if (string.equals("Refresh"))
-				browser.refresh();
-			else if (string.equals("Go"))
-				browser.setUrl(location.getText());
-				System.out.println(getActiveFileName());
+			switch (string) {
+				case "Back":
+					browser.back();
+					break;
+				case "Forward":
+					browser.forward();
+					break;
+				case "Stop":
+					browser.stop();
+					break;
+				case "Refresh":
+					browser.refresh();
+					break;
+				case "Lock On":
+					isLocked = false;
+					itemLock.setText("Lock Off");
+					break;
+				case "Lock Off":
+					isLocked = true;
+					itemLock.setText("Lock On");
+					break;
+				case "Go":
+					browser.setUrl(location.getText());
+					System.out.println(getActiveFileName());
+					break;
+				default:
+					break;
+			}
 		};
 		browser.addProgressListener(new ProgressListener() {
 			@Override
@@ -135,6 +156,7 @@ public class LiveBrowserWindow {
 		itemStop.addListener(SWT.Selection, listener);
 		itemRefresh.addListener(SWT.Selection, listener);
 		itemGo.addListener(SWT.Selection, listener);
+		itemLock.addListener(SWT.Selection, listener);
 		location.addListener(SWT.DefaultSelection, e -> browser.setUrl(location.getText()));
 
 		browser.setUrl("about:blank");
@@ -144,11 +166,11 @@ public class LiveBrowserWindow {
 	
 	private LiveBrowser establishBrowserIn(Composite parent) {
 		try {
-			LiveBrowser browser = new SWTBrowser(parent);
+			LiveBrowser browser = new CEFBrowser(parent);
 			return browser;
 		}
 		catch (Exception e) {
-			LiveBrowser browser = new CEFBrowser(parent);
+			LiveBrowser browser = new SWTBrowser(parent);
 			return browser;
 		}
 	}
@@ -191,7 +213,9 @@ public class LiveBrowserWindow {
 				if ( activePart.getClass().getName().equals(page.getActiveEditor().getClass().getName()) ) {
 					if ( ! browser.getUrl().equals(pathWithProtocol) ) {
 						if ( pathWithProtocol.endsWith(".html") ) {
-							browser.setUrl(pathWithProtocol);
+							if ( ! isLocked ) {
+								browser.setUrl(pathWithProtocol);
+							}
 						}
 					}
 				}
@@ -260,8 +284,8 @@ public class LiveBrowserWindow {
 			return activeFileName;
 		}
 		catch (Exception e) {
-			System.out.println("Error occurred when getting active file name!");
-			return e.getMessage();
+			System.out.println("Error occurred when getting active file name! "+e.toString());
+			return "about:blank";
 		}
 		
 	}
