@@ -20,7 +20,7 @@ public class SWTBrowser extends LiveBrowser {
 		browser = new Browser(parent, SWT.NONE);
 		GridData data = this.generateStyle();
 		browser.setLayoutData(data);
-		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());;
+		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());
 		browser.setJavascriptEnabled(true);
 	}
 

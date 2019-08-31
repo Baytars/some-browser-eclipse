@@ -20,6 +20,8 @@ public class CEFBrowser extends LiveBrowser {
 		browser = new Browser(parent, SWT.NONE);
 		GridData data = this.generateStyle();
 		browser.setLayoutData(data);
+		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());
+		browser.setJavascriptEnabled(true);
 	}
 	
 	public void back() {

@@ -2,8 +2,13 @@ package cn.gedobu.some.embeded.browser.parts;
 
 import org.eclipse.swt.widgets.Composite;
 
+import java.io.File;
 import java.net.URI;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -32,10 +37,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
-
-import cn.gedobu.some.embeded.browser.live.CEFBrowser;
-import cn.gedobu.some.embeded.browser.live.LiveBrowser;
-import cn.gedobu.some.embeded.browser.live.SWTBrowser;
+import org.eclipse.ui.ide.IDE;
 
 public class LiveBrowserWindow {
 	private boolean isLocked = false;
@@ -49,6 +51,32 @@ public class LiveBrowserWindow {
 		gridLayout.numColumns = 3;
 		parent.setLayout(gridLayout);
 	}
+	
+	/**
+     * 去掉指定字符串的开头的指定字符
+     * @param stream 原始字符串
+     * @param trim 要删除的字符串
+     * @return
+     */
+  private String StringStartTrim(String stream, String trim) {
+        // null或者空字符串的时候不处理
+        if (stream == null || stream.length() == 0 || trim == null || trim.length() == 0) {
+            return stream;
+        }
+        // 要删除的字符串结束位置
+        int end;
+        // 正规表达式
+        String regPattern = "[" + trim + "]*+";
+        Pattern pattern = Pattern.compile(regPattern, Pattern.CASE_INSENSITIVE);
+        // 去掉原始字符串开头位置的指定字符
+        Matcher matcher = pattern.matcher(stream);
+        if (matcher.lookingAt()) {
+            end = matcher.end();
+            stream = stream.substring(end);
+        }
+        // 返回处理后的字符串
+        return stream;
+    }
 	
 	private void establish(Composite parent) {
 		decorateParent(parent);
@@ -65,6 +93,8 @@ public class LiveBrowserWindow {
 		itemGo.setText("Go");
 		ToolItem itemLock = new ToolItem(toolbar, SWT.PUSH);
 		itemLock.setText("Lock Off");
+		ToolItem itemOpen = new ToolItem(toolbar, SWT.PUSH);
+		itemOpen.setText("Open");
 
 		GridData data = new GridData();
 		data.horizontalSpan = 3;
@@ -80,7 +110,17 @@ public class LiveBrowserWindow {
 		data.grabExcessHorizontalSpace = true;
 		location.setLayoutData(data);
 
-		LiveBrowser browser = establishBrowserIn(parent);
+		Browser browser = establishBrowserIn(parent);
+		data = new GridData();
+		data.horizontalAlignment = GridData.FILL;
+		data.verticalAlignment = GridData.FILL;
+		data.horizontalSpan = 3;
+		data.grabExcessHorizontalSpace = true;
+		data.grabExcessVerticalSpace = true;
+		
+		browser.setLayoutData(data);
+		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());
+		browser.setJavascriptEnabled(true);
 
 		final Label status = new Label(parent, SWT.NONE);
 		data = new GridData(GridData.FILL_HORIZONTAL);
@@ -121,6 +161,26 @@ public class LiveBrowserWindow {
 					browser.setUrl(location.getText());
 					System.out.println(getActiveFileName());
 					break;
+				case "Open":
+					System.out.println("Opening file");
+					String activeURL = browser.getUrl();
+					File fileToOpen = new File(StringStartTrim(activeURL, "file:"));
+					System.out.println(fileToOpen.getPath());
+					
+					if ( fileToOpen.exists() && fileToOpen.isFile() ) {
+						IFileStore fileStore = EFS.getLocalFileSystem().getStore(fileToOpen.toURI());
+						try {
+							IDE.openEditorOnFileStore(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), fileStore);
+						}
+						catch (Exception e) {
+							System.out.println("OpenEditor Error: "+e.toString());
+						}
+					}
+					else {
+					    System.out.println("File does not exist!");
+					}
+					
+					break;
 				default:
 					break;
 			}
@@ -157,6 +217,7 @@ public class LiveBrowserWindow {
 		itemRefresh.addListener(SWT.Selection, listener);
 		itemGo.addListener(SWT.Selection, listener);
 		itemLock.addListener(SWT.Selection, listener);
+		itemOpen.addListener(SWT.Selection, listener);
 		location.addListener(SWT.DefaultSelection, e -> browser.setUrl(location.getText()));
 
 		browser.setUrl("about:blank");
@@ -164,18 +225,11 @@ public class LiveBrowserWindow {
 		bindEditorChangeTo(browser);
 	}
 	
-	private LiveBrowser establishBrowserIn(Composite parent) {
-		try {
-			LiveBrowser browser = new CEFBrowser(parent);
-			return browser;
-		}
-		catch (Exception e) {
-			LiveBrowser browser = new SWTBrowser(parent);
-			return browser;
-		}
+	private Browser establishBrowserIn(Composite parent) {
+		return new Browser(parent, SWT.NONE);
 	}
 	
-	private IPartListener syncPageToBrowser(IWorkbenchPage page, LiveBrowser browser) {
+	private IPartListener syncPageToBrowser(IWorkbenchPage page, Browser browser) {
 		IPartListener pageListener = new IPartListener() {
 			
 			@Override
@@ -200,32 +254,41 @@ public class LiveBrowserWindow {
 			
 			@Override
 			public void partActivated(IWorkbenchPart activePart) {
-				System.out.println("Active part is: " + activePart.getClass().getName());
-				System.out.println("Text editor class name: " + page.getActiveEditor().getClass().getName());
 				System.out.println("partActivated: "+getActiveFileName()+"\n");
-//				String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
-//				System.out.println(workspaceRoot);
-				IEditorInput input = page.getActiveEditor().getEditorInput();
-				String pathWithProtocol = "file://"+getFileAbsolutePath(input);
-//				System.out.println("location text: " + location.getText());
-				System.out.println("pathWithProtocol: " + pathWithProtocol);
-				System.out.println("browser url: " + browser.getUrl());
-				if ( activePart.getClass().getName().equals(page.getActiveEditor().getClass().getName()) ) {
-					if ( ! browser.getUrl().equals(pathWithProtocol) ) {
-						if ( pathWithProtocol.endsWith(".html") ) {
-							if ( ! isLocked ) {
-								browser.setUrl(pathWithProtocol);
+				System.out.println("Active part is: " + activePart.getClass().getName());
+				IEditorPart activeEditor = null;
+				String pathWithProtocol = "about:blank";
+				try {
+					activeEditor = page.getActiveEditor();
+					System.out.println("Text editor class name: " + activeEditor.getClass().getName());
+					IEditorInput input = page.getActiveEditor().getEditorInput();
+					pathWithProtocol = "file://"+getFileAbsolutePath(input);
+					if ( activePart.getClass().getName().equals(activeEditor.getClass().getName()) ) {
+						if ( ! browser.getUrl().equals(pathWithProtocol) ) {
+							if ( pathWithProtocol.endsWith(".html") ) {
+								if ( ! isLocked ) {
+									browser.setUrl(pathWithProtocol);
+								}
 							}
 						}
 					}
 				}
+				catch (Exception e) {
+					System.out.println("There's currently no active editor. No file is opened.");
+				}
+				
+//				String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
+//				System.out.println(workspaceRoot);
+//				System.out.println("location text: " + location.getText());
+				System.out.println("pathWithProtocol: " + pathWithProtocol);
+				System.out.println("browser url: " + browser.getUrl());
 			}
 		};
 		page.addPartListener(pageListener);
 		return pageListener;
 	}
 	
-	private IResourceChangeListener syncResourceChangeToBrowser(LiveBrowser browser) {
+	private IResourceChangeListener syncResourceChangeToBrowser(Browser browser) {
 		IResourceChangeListener resListener = new IResourceChangeListener() {
 			
 			@Override
@@ -238,7 +301,7 @@ public class LiveBrowserWindow {
 		return resListener;
 	}
 	
-	private void bindEditorChangeTo(LiveBrowser browser) {
+	private void bindEditorChangeTo(Browser browser) {
 		System.out.println("Adding listener to editor ...");
 		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 		IWorkbenchPage page = window.getActivePage();

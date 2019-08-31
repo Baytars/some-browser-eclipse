@@ -15,6 +15,7 @@ Require-Bundle: javax.inject,
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: SoMeEmbededBrowser
 Import-Package: javax.annotation;version="1.2.0",
+ org.eclipse.core.filesystem,
  org.eclipse.core.resources,
  org.eclipse.swt.chromium,
  org.eclipse.ui,
