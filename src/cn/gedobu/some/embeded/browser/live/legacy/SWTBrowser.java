@@ -1,4 +1,4 @@
-package cn.gedobu.some.embeded.browser.live;
+package cn.gedobu.some.embeded.browser.live.legacy;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;

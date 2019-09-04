@@ -1,355 +1,82 @@
 package cn.gedobu.some.embeded.browser.parts;
 
-import org.eclipse.swt.widgets.Composite;
-
-import java.io.File;
-import java.net.URI;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileStore;
-import org.eclipse.core.resources.IResourceChangeEvent;
-import org.eclipse.core.resources.IResourceChangeListener;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
-import org.eclipse.swt.browser.LocationEvent;
-import org.eclipse.swt.browser.LocationListener;
-import org.eclipse.swt.browser.ProgressEvent;
-import org.eclipse.swt.browser.ProgressListener;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
-import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.IFileEditorInput;
-import org.eclipse.ui.IPartListener;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.ide.FileStoreEditorInput;
-import org.eclipse.ui.ide.IDE;
+
+import cn.gedobu.some.embeded.browser.live.LiveBrowser;
+import cn.gedobu.some.embeded.browser.toolbar.Toolbar;
+
 
 public class LiveBrowserWindow {
-	private boolean isLocked = false;
+	Toolbar toolbar;
 	
 	public LiveBrowserWindow(Composite parent) {
+		this.decorateParent(parent);
 		this.establish(parent);
 	}
 	
-	private void decorateParent(Composite parent) {
+	void decorateParent(Composite parent) {
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 3;
 		parent.setLayout(gridLayout);
 	}
 	
-	/**
-     * 去掉指定字符串的开头的指定字符
-     * @param stream 原始字符串
-     * @param trim 要删除的字符串
-     * @return
-     */
-  private String StringStartTrim(String stream, String trim) {
-        // null或者空字符串的时候不处理
-        if (stream == null || stream.length() == 0 || trim == null || trim.length() == 0) {
-            return stream;
-        }
-        // 要删除的字符串结束位置
-        int end;
-        // 正规表达式
-        String regPattern = "[" + trim + "]*+";
-        Pattern pattern = Pattern.compile(regPattern, Pattern.CASE_INSENSITIVE);
-        // 去掉原始字符串开头位置的指定字符
-        Matcher matcher = pattern.matcher(stream);
-        if (matcher.lookingAt()) {
-            end = matcher.end();
-            stream = stream.substring(end);
-        }
-        // 返回处理后的字符串
-        return stream;
-    }
+	void establish(Composite parent) {
+		toolbar = new Toolbar(parent, SWT.NONE);
+
+		establishAddressLabel(parent);
+
+		Text location = establishLocationBar(parent);
+		toolbar.bindsWith(location);
+		
+		LiveBrowser browser = new LiveBrowser(parent, SWT.NONE);
+		browser.bindEditorChange();
+		browser.bindsWith(location);
+		toolbar.bindsWith(browser);
+
+		Label status = establishStatusLabel(parent);
+		browser.bindsWith(status);
+
+		ProgressBar progressBar = establishProgressBar(parent);
+		browser.bindsWith(progressBar);
+		
+		browser.setUrl("about:blank");
+	}
 	
-	private void establish(Composite parent) {
-		decorateParent(parent);
-		ToolBar toolbar = new ToolBar(parent, SWT.NONE);
-		ToolItem itemBack = new ToolItem(toolbar, SWT.PUSH);
-		itemBack.setText("Back");
-		ToolItem itemForward = new ToolItem(toolbar, SWT.PUSH);
-		itemForward.setText("Forward");
-		ToolItem itemStop = new ToolItem(toolbar, SWT.PUSH);
-		itemStop.setText("Stop");
-		ToolItem itemRefresh = new ToolItem(toolbar, SWT.PUSH);
-		itemRefresh.setText("Refresh");
-		ToolItem itemGo = new ToolItem(toolbar, SWT.PUSH);
-		itemGo.setText("Go");
-		ToolItem itemLock = new ToolItem(toolbar, SWT.PUSH);
-		itemLock.setText("Lock Off");
-		ToolItem itemOpen = new ToolItem(toolbar, SWT.PUSH);
-		itemOpen.setText("Open");
-
-		GridData data = new GridData();
-		data.horizontalSpan = 3;
-		toolbar.setLayoutData(data);
-
+	Label establishAddressLabel(Composite parent) {
 		Label labelAddress = new Label(parent, SWT.NONE);
 		labelAddress.setText("Address");
-
+		return labelAddress;
+	}
+	
+	Label establishStatusLabel(Composite parent) {
+		final Label status = new Label(parent, SWT.NONE);
+		GridData data = new GridData(GridData.FILL_HORIZONTAL);
+		data.horizontalSpan = 2;
+		status.setLayoutData(data);
+		return status;
+	}
+	
+	ProgressBar establishProgressBar(Composite parent) {
+		final ProgressBar progressBar = new ProgressBar(parent, SWT.NONE);
+		GridData data = new GridData();
+		data.horizontalAlignment = GridData.END;
+		progressBar.setLayoutData(data);
+		return progressBar;
+	}
+	
+	Text establishLocationBar(Composite parent) {
 		final Text location = new Text(parent, SWT.BORDER);
-		data = new GridData();
+		GridData data = new GridData();
 		data.horizontalAlignment = GridData.FILL;
 		data.horizontalSpan = 2;
 		data.grabExcessHorizontalSpace = true;
 		location.setLayoutData(data);
-
-		Browser browser = establishBrowserIn(parent);
-		data = new GridData();
-		data.horizontalAlignment = GridData.FILL;
-		data.verticalAlignment = GridData.FILL;
-		data.horizontalSpan = 3;
-		data.grabExcessHorizontalSpace = true;
-		data.grabExcessVerticalSpace = true;
-		
-		browser.setLayoutData(data);
-		System.out.println("Is Javascript enabled? "+browser.getJavascriptEnabled());
-		browser.setJavascriptEnabled(true);
-
-		final Label status = new Label(parent, SWT.NONE);
-		data = new GridData(GridData.FILL_HORIZONTAL);
-		data.horizontalSpan = 2;
-		status.setLayoutData(data);
-
-		final ProgressBar progressBar = new ProgressBar(parent, SWT.NONE);
-		data = new GridData();
-		data.horizontalAlignment = GridData.END;
-		progressBar.setLayoutData(data);
-
-		/* event handling */
-		Listener listener = event -> {
-			ToolItem item = (ToolItem) event.widget;
-			String string = item.getText();
-			switch (string) {
-				case "Back":
-					browser.back();
-					break;
-				case "Forward":
-					browser.forward();
-					break;
-				case "Stop":
-					browser.stop();
-					break;
-				case "Refresh":
-					browser.refresh();
-					break;
-				case "Lock On":
-					isLocked = false;
-					itemLock.setText("Lock Off");
-					break;
-				case "Lock Off":
-					isLocked = true;
-					itemLock.setText("Lock On");
-					break;
-				case "Go":
-					browser.setUrl(location.getText());
-					System.out.println(getActiveFileName());
-					break;
-				case "Open":
-					System.out.println("Opening file");
-					String activeURL = browser.getUrl();
-					File fileToOpen = new File(StringStartTrim(activeURL, "file:"));
-					System.out.println(fileToOpen.getPath());
-					
-					if ( fileToOpen.exists() && fileToOpen.isFile() ) {
-						IFileStore fileStore = EFS.getLocalFileSystem().getStore(fileToOpen.toURI());
-						try {
-							IDE.openEditorOnFileStore(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), fileStore);
-						}
-						catch (Exception e) {
-							System.out.println("OpenEditor Error: "+e.toString());
-						}
-					}
-					else {
-					    System.out.println("File does not exist!");
-					}
-					
-					break;
-				default:
-					break;
-			}
-		};
-		browser.addProgressListener(new ProgressListener() {
-			@Override
-			public void changed(ProgressEvent event) {
-					if (event.total == 0) return;
-					int ratio = event.current * 100 / event.total;
-					progressBar.setSelection(ratio);
-			}
-			@Override
-			public void completed(ProgressEvent event) {
-				progressBar.setSelection(0);
-			}
-		});
-		browser.addStatusTextListener(event -> status.setText(event.text));
-		browser.addLocationListener(new LocationListener() {
-			
-			@Override
-			public void changing(LocationEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-			@Override
-			public void changed(LocationEvent event) {
-				if (event.top) location.setText(event.location);
-			}
-		});
-		itemBack.addListener(SWT.Selection, listener);
-		itemForward.addListener(SWT.Selection, listener);
-		itemStop.addListener(SWT.Selection, listener);
-		itemRefresh.addListener(SWT.Selection, listener);
-		itemGo.addListener(SWT.Selection, listener);
-		itemLock.addListener(SWT.Selection, listener);
-		itemOpen.addListener(SWT.Selection, listener);
-		location.addListener(SWT.DefaultSelection, e -> browser.setUrl(location.getText()));
-
-		browser.setUrl("about:blank");
-		
-		bindEditorChangeTo(browser);
-	}
-	
-	private Browser establishBrowserIn(Composite parent) {
-		return new Browser(parent, SWT.NONE);
-	}
-	
-	private IPartListener syncPageToBrowser(IWorkbenchPage page, Browser browser) {
-		IPartListener pageListener = new IPartListener() {
-			
-			@Override
-			public void partOpened(IWorkbenchPart arg0) {
-				System.out.println("partOpened: "+getActiveFileName()+"\n");
-			}
-			
-			@Override
-			public void partDeactivated(IWorkbenchPart arg0) {
-				System.out.println("partDeactivated: "+getActiveFileName()+"\n");
-			}
-			
-			@Override
-			public void partClosed(IWorkbenchPart arg0) {
-				System.out.println("partClosed: "+getActiveFileName()+"\n");
-			}
-			
-			@Override
-			public void partBroughtToTop(IWorkbenchPart arg0) {
-				System.out.println("partBroughtToTop: "+getActiveFileName()+"\n");
-			}
-			
-			@Override
-			public void partActivated(IWorkbenchPart activePart) {
-				System.out.println("partActivated: "+getActiveFileName()+"\n");
-				System.out.println("Active part is: " + activePart.getClass().getName());
-				IEditorPart activeEditor = null;
-				String pathWithProtocol = "about:blank";
-				try {
-					activeEditor = page.getActiveEditor();
-					System.out.println("Text editor class name: " + activeEditor.getClass().getName());
-					IEditorInput input = page.getActiveEditor().getEditorInput();
-					pathWithProtocol = "file://"+getFileAbsolutePath(input);
-					if ( activePart.getClass().getName().equals(activeEditor.getClass().getName()) ) {
-						if ( ! browser.getUrl().equals(pathWithProtocol) ) {
-							if ( pathWithProtocol.endsWith(".html") ) {
-								if ( ! isLocked ) {
-									browser.setUrl(pathWithProtocol);
-								}
-							}
-						}
-					}
-				}
-				catch (Exception e) {
-					System.out.println("There's currently no active editor. No file is opened.");
-				}
-				
-//				String workspaceRoot= Platform.getInstanceLocation().getURL().toString();
-//				System.out.println(workspaceRoot);
-//				System.out.println("location text: " + location.getText());
-				System.out.println("pathWithProtocol: " + pathWithProtocol);
-				System.out.println("browser url: " + browser.getUrl());
-			}
-		};
-		page.addPartListener(pageListener);
-		return pageListener;
-	}
-	
-	private IResourceChangeListener syncResourceChangeToBrowser(Browser browser) {
-		IResourceChangeListener resListener = new IResourceChangeListener() {
-			
-			@Override
-			public void resourceChanged(IResourceChangeEvent event) {
-				System.out.println("Resource has changed: "+event.toString());
-				browser.refresh();
-			}
-		};
-		ResourcesPlugin.getWorkspace().addResourceChangeListener(resListener);
-		return resListener;
-	}
-	
-	private void bindEditorChangeTo(Browser browser) {
-		System.out.println("Adding listener to editor ...");
-		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-		IWorkbenchPage page = window.getActivePage();
-		
-		IPartListener pageListener = syncPageToBrowser(page, browser);
-		IResourceChangeListener resListener = syncResourceChangeToBrowser(browser);
-		
-		browser.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(DisposeEvent event) {
-				page.removePartListener(pageListener);
-				ResourcesPlugin.getWorkspace().removeResourceChangeListener(resListener);
-			}
-		});
-	}
-	
-	private String getFileAbsolutePath(IEditorInput input) {
-		String absPath = "about:blank";
-		if (input instanceof FileStoreEditorInput) {
-			URI file = ((FileStoreEditorInput)input).getURI();
-			absPath = file.getPath();
-		}
-		else if(input instanceof IFileEditorInput){
-			URI file = ((IFileEditorInput)input).getFile().getLocationURI();
-//			System.out.println(file);
-//			System.out.println(file.toString());
-//			IProject project = file.getProject(); 
-//			System.out.println(project.getFullPath().makeAbsolute().toOSString());;
-//			String relaFilePath = file.getFullPath().makeAbsolute().toOSString();
-//			String fullStr = "file://"+workspaceRoot+relaFilePath;
-//			System.out.println(fullStr);
-			absPath = file.getRawPath();
-		}
-		return absPath;
-	}
-	
-	private String getActiveFileName() {
-		try {
-//			System.out.println("Getting active file name");
-			IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-			String activeFileName = editor.getTitle();
-//			System.out.println("The active file name is: "+activeFileName);
-			return activeFileName;
-		}
-		catch (Exception e) {
-			System.out.println("Error occurred when getting active file name! "+e.toString());
-			return "about:blank";
-		}
-		
+		return location;
 	}
 }
