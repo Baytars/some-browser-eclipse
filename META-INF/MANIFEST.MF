@@ -23,4 +23,8 @@ Import-Package: javax.annotation;version="1.2.0",
  org.eclipse.ui.ide
 Bundle-ActivationPolicy: lazy
 Export-Package: cn.gedobu.some.embeded.browser,
- cn.gedobu.some.embeded.browser.parts
+ cn.gedobu.some.embeded.browser.live,
+ cn.gedobu.some.embeded.browser.live.legacy,
+ cn.gedobu.some.embeded.browser.parts,
+ cn.gedobu.some.embeded.browser.toolbar,
+ cn.gedobu.some.embeded.browser.util

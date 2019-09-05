@@ -18,7 +18,6 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
@@ -37,15 +36,15 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class Toolbar extends ToolBar {
+	ToolItem itemOpen = new ToolItem(this, SWT.PUSH);
 	ToolItem itemBack = new ToolItem(this, SWT.PUSH);
-	ToolItem itemForward = new ToolItem(this, SWT.PUSH);
 	ToolItem itemStop = new ToolItem(this, SWT.PUSH);
+	ToolItem itemForward = new ToolItem(this, SWT.PUSH);
 	ToolItem itemRefresh = new ToolItem(this, SWT.PUSH);
-	ToolItem itemGo = new ToolItem(this, SWT.PUSH);
 	ToolItem itemLock = new ToolItem(this, SWT.PUSH);
 	public boolean isLocked = false;
-	ToolItem itemOpen = new ToolItem(this, SWT.PUSH);
 	ToolItem itemTemplate = new ToolItem(this, SWT.PUSH);
+	ToolItem itemGo = new ToolItem(this, SWT.PUSH);
 	
 	Text location;
 	
@@ -56,14 +55,16 @@ public class Toolbar extends ToolBar {
 
 	public Toolbar(Composite parent, int style) {
 		super(parent, style);
-		itemBack.setText("Back");
-		itemForward.setText("Forward");
-		itemStop.setText("Stop");
-		itemRefresh.setText("Refresh");
-		itemGo.setText("Go");
-		itemLock.setText("Lock Off");
+		itemBack.setText("◀️");
+		itemForward.setText("▶️");
+		itemStop.setText("⏹️");
+		itemRefresh.setText("♻️");
+		itemGo.setText("⎋");
+		itemGo.setToolTipText("Go");
+		itemLock.setText("🔓");
 		itemOpen.setText("Open");
-		itemTemplate.setText("Create from Template");
+		itemTemplate.setText("ε");
+		itemTemplate.setToolTipText("Create from Template");
 		
 		GridData data = new GridData();
 		data.horizontalSpan = 3;
@@ -82,27 +83,27 @@ public class Toolbar extends ToolBar {
 			ToolItem item = (ToolItem) event.widget;
 			String string = item.getText();
 			switch (string) {
-				case "Back":
+				case "◀️":
 					browser.back();
 					break;
-				case "Forward":
+				case "▶️":
 					browser.forward();
 					break;
-				case "Stop":
+				case "⏹️":
 					browser.stop();
 					break;
-				case "Refresh":
+				case "♻️":
 					browser.refresh();
 					break;
-				case "Lock On":
+				case "🔒":
 					isLocked = false;
-					this.itemLock.setText("Lock Off");
+					this.itemLock.setText("🔓");
 					break;
-				case "Lock Off":
+				case "🔓":
 					isLocked = true;
-					this.itemLock.setText("Lock On");
+					this.itemLock.setText("🔒");
 					break;
-				case "Go":
+				case "⎋":
 					browser.setUrl(location.getText());
 					System.out.println(FileUtil.getActiveFileName());
 					break;
@@ -112,7 +113,7 @@ public class Toolbar extends ToolBar {
 					File fileToOpen = new File(StringStartTrim(activeURL, "file:"));
 					openFileInDefaultEditor(fileToOpen);
 					break;
-				case "Create from Template":
+				case "ε":
 					final FileDialog dlg = new FileDialog(getParent().getShell(), SWT.OPEN);
 					dlg.setText("Select Template");
 					dlg.setFilterExtensions ( new String[] { "*.html", "*.*" } );
