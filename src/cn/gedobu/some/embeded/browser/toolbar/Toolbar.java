@@ -124,9 +124,10 @@ public class Toolbar extends ToolBar {
 						fileRenameDlg.open();
 						IPath pathChild = fileRenameDlg.getResult ();
 						if ( pathChild != null ) {
-							if ( pathChild != null ) {
-								saveFile(pathChild, selected);
-							}
+							saveFile(pathChild, selected);
+						}
+						else {
+							System.out.println("Child path is null.");
 						}
 					}
 					else {
@@ -163,7 +164,7 @@ public class Toolbar extends ToolBar {
 								defaultDisplay.syncExec(new Runnable() {
 									@Override
 									public void run() {
-										MessageDialog.openError(shell, "File Already Exists", "File Already Exists!");
+										MessageDialog.openError(shell, "File Already Exists", "You cannot override an existing file!");
 									}
 								});
 							}
@@ -171,9 +172,9 @@ public class Toolbar extends ToolBar {
 								defaultDisplay.syncExec(new Runnable() {
 									@Override
 									public void run() {
-										MessageDialog.openConfirm(shell, "Success", "File save successfully!");
 										try {
 											iFileChild.create(new FileInputStream(fileMother), true, monitor);
+											MessageDialog.openConfirm(shell, "Success", String.format("File %s generated from %s saved successfully!", pathChild.toOSString(), pathStringMother ));
 											openFileInDefaultEditor(iFileChild.getLocation().toFile());
 										} catch (FileNotFoundException
 												| CoreException e) {
