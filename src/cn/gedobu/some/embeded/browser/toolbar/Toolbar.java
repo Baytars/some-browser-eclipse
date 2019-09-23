@@ -24,7 +24,12 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.SaveAsDialog;
 import org.eclipse.ui.ide.IDE;
+import org.mozilla.interfaces.nsIDOMDocument;
+import org.mozilla.interfaces.nsIDOMElement;
+import org.mozilla.interfaces.nsIDOMWindow;
+import org.mozilla.interfaces.nsIWebBrowser;
 
+import cn.gedobu.some.embeded.browser.DOMEditor;
 import cn.gedobu.some.embeded.browser.live.LiveBrowser;
 import cn.gedobu.some.embeded.browser.util.FileUtil;
 
@@ -45,6 +50,7 @@ public class Toolbar extends ToolBar {
 	public boolean isLocked = false;
 	ToolItem itemTemplate = new ToolItem(this, SWT.PUSH);
 	ToolItem itemGo = new ToolItem(this, SWT.PUSH);
+	ToolItem itemInspect = new ToolItem(this, SWT.PUSH);
 	
 	Text location;
 	
@@ -65,6 +71,8 @@ public class Toolbar extends ToolBar {
 		itemOpen.setText("Open");
 		itemTemplate.setText("ε");
 		itemTemplate.setToolTipText("Create from Template");
+		itemInspect.setText("🔍");
+		itemInspect.setToolTipText("Inspect Elements");
 		
 		GridData data = new GridData();
 		data.horizontalSpan = 3;
@@ -134,6 +142,23 @@ public class Toolbar extends ToolBar {
 						System.out.println("No file selected.");
 					}
 					break;
+				case "🔍":
+					nsIWebBrowser webBrowser = (nsIWebBrowser)browser.getWebBrowser();
+					nsIDOMWindow domWindow = webBrowser.getContentDOMWindow ();
+					nsIDOMDocument document = domWindow.getDocument ();
+					nsIDOMElement documentElement = document.getDocumentElement ();
+					
+					final Display display = new Display ();
+					final Shell shell = new Shell (display);
+					DOMEditor domEditor = new DOMEditor (shell);
+					domEditor.populate (documentElement);
+					
+					shell.open ();
+					while (!shell.isDisposed ()) {
+						if (!display.readAndDispatch ()) display.sleep ();
+					}
+					display.dispose ();
+					break;
 				default:
 					break;
 			}
@@ -147,6 +172,7 @@ public class Toolbar extends ToolBar {
 		itemLock.addListener(SWT.Selection, listener);
 		itemOpen.addListener(SWT.Selection, listener);
 		itemTemplate.addListener(SWT.Selection, listener);
+		itemInspect.addListener(SWT.Selection, listener);
 	}
 	
 	void saveFile(IPath pathChild, String pathStringMother) {

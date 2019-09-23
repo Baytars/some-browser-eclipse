@@ -194,7 +194,7 @@ public class LiveBrowser extends Browser {
 			
 			@Override
 			public void resourceChanged(IResourceChangeEvent event) {
-				System.out.println("Resource has changed: "+event.toString());
+				System.out.println(String.format("Resource has changed: %s", event.getType()));
 				browser.refresh();
 			}
 		};
