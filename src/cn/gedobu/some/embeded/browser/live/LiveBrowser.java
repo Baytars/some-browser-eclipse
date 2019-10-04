@@ -128,13 +128,24 @@ public class LiveBrowser extends Browser {
 					activeEditor = page.getActiveEditor();
 					System.out.println("Text editor class name: " + activeEditor.getClass().getName());
 					IEditorInput input = page.getActiveEditor().getEditorInput();
-					pathWithProtocol = "file://"+getFileAbsolutePath(input);
+					
+					if ( toolbar.itemSpring.getText() == "♠" ) {
+						pathWithProtocol = "http://localhost:8080/glossaries/spring/" + input.getName();
+					}
+					else {
+						pathWithProtocol = "file://"+getFileAbsolutePath(input);
+					}
+					
 					if ( activePart.getClass().getName().equals(activeEditor.getClass().getName()) ) {
 						if ( ! browser.getUrl().equals(pathWithProtocol) ) {
 							if ( pathWithProtocol.endsWith(".html") ) {
 								if ( ! toolbar.isLocked ) {
 									browser.setUrl(pathWithProtocol);
 								}
+							}
+							else if ( pathWithProtocol.endsWith(".java") && input.getName().startsWith("_") ) {
+								String pageNum = input.getName().replaceFirst("_", "").replace(".java", "");
+								browser.setUrl(String.format("http://localhost:8080/glossaries/spring/%s.html", pageNum));
 							}
 						}
 					}

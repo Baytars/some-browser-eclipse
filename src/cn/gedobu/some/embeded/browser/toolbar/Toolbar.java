@@ -48,9 +48,11 @@ public class Toolbar extends ToolBar {
 	ToolItem itemRefresh = new ToolItem(this, SWT.PUSH);
 	ToolItem itemLock = new ToolItem(this, SWT.PUSH);
 	public boolean isLocked = false;
+	public boolean isSpringDevMode = false;
 	ToolItem itemTemplate = new ToolItem(this, SWT.PUSH);
 	ToolItem itemGo = new ToolItem(this, SWT.PUSH);
 	ToolItem itemInspect = new ToolItem(this, SWT.PUSH);
+	public ToolItem itemSpring = new ToolItem(this, SWT.PUSH);
 	
 	Text location;
 	
@@ -73,6 +75,8 @@ public class Toolbar extends ToolBar {
 		itemTemplate.setToolTipText("Create from Template");
 		itemInspect.setText("🔍");
 		itemInspect.setToolTipText("Inspect Elements");
+		itemSpring.setText("♤");
+		itemSpring.setToolTipText("Spring Dev Mode");
 		
 		GridData data = new GridData();
 		data.horizontalSpan = 3;
@@ -159,6 +163,13 @@ public class Toolbar extends ToolBar {
 					}
 					display.dispose ();
 					break;
+				case "♤":
+					isSpringDevMode = true;
+					itemSpring.setText("♠");
+					break;
+				case "♠":
+					isSpringDevMode = false;
+					itemSpring.setText("♤");
 				default:
 					break;
 			}
@@ -173,6 +184,7 @@ public class Toolbar extends ToolBar {
 		itemOpen.addListener(SWT.Selection, listener);
 		itemTemplate.addListener(SWT.Selection, listener);
 		itemInspect.addListener(SWT.Selection, listener);
+		itemSpring.addListener(SWT.Selection, listener);
 	}
 	
 	void saveFile(IPath pathChild, String pathStringMother) {
