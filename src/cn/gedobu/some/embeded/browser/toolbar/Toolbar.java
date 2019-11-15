@@ -128,7 +128,7 @@ public class Toolbar extends ToolBar {
 				case "ε":
 					final FileDialog dlg = new FileDialog(getParent().getShell(), SWT.OPEN);
 					dlg.setText("Select Template");
-					dlg.setFilterExtensions ( new String[] { "*.html", "*.*" } );
+					dlg.setFilterExtensions ( new String[] { "*.xml", "*html", "*.*" } );
 					final String selected = dlg.open ();
 					if ( selected != null ) {
 						System.out.println(selected);

@@ -6,6 +6,7 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationEvent;
 import org.eclipse.swt.browser.LocationListener;
@@ -138,7 +139,7 @@ public class LiveBrowser extends Browser {
 					
 					if ( activePart.getClass().getName().equals(activeEditor.getClass().getName()) ) {
 						if ( ! browser.getUrl().equals(pathWithProtocol) ) {
-							if ( pathWithProtocol.endsWith(".html") ) {
+							if ( pathWithProtocol.endsWith("ml") ) {
 								if ( ! toolbar.isLocked ) {
 									browser.setUrl(pathWithProtocol);
 								}
@@ -206,7 +207,12 @@ public class LiveBrowser extends Browser {
 			@Override
 			public void resourceChanged(IResourceChangeEvent event) {
 				System.out.println(String.format("Resource has changed: %s", event.getType()));
-				browser.refresh();
+				try {
+					browser.refresh();
+				}
+				catch (SWTException e) {
+					System.out.println(e.toString()+": The browser window don't seem to be the active window. "+e.getMessage());
+				}
 			}
 		};
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(resListener);
