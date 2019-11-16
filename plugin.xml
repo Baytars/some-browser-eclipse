@@ -11,4 +11,64 @@
       </fragment>
    </extension>
 
+   <!-- Proprietary Syntax Highlighter Editor -->
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            id="cn.gedobu.some.med.editor.editors.MedEditor"
+            name="Med Editor"
+            icon="icons/sample.png"
+            extensions="med"
+            class="cn.gedobu.some.med.editor.editors.MedEditor"
+            contributorClass="org.eclipse.ui.texteditor.BasicTextEditorActionContributor">
+      </editor>
+   </extension>
+   
+   <!-- Adopted from https://github.com/program-in-chinese/stone-editor-eclipse -->
+   <extension
+         point="org.eclipse.core.contenttype.contentTypes">
+      <content-type
+            file-extensions="med"
+            base-type="org.eclipse.core.runtime.text"
+            name="cn.gedobu.some.editor.med.grammar.med"
+            id="cn.gedobu.some.editor.med.grammar.med">
+      </content-type>
+   </extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editorContentTypeBinding
+            contentTypeId="cn.gedobu.some.editor.med.grammar.med"
+            editorId="org.eclipse.ui.genericeditor.GenericEditor">
+      </editorContentTypeBinding>
+   </extension>
+   <extension
+         point="org.eclipse.ui.genericeditor.presentationReconcilers">
+      <presentationReconciler
+            class="cn.gedobu.some.editor.med.grammar.协调器"
+            contentType="cn.gedobu.some.editor.med.grammar.med">
+      </presentationReconciler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.genericeditor.hoverProviders">
+      <hoverProvider
+            class="cn.gedobu.some.editor.med.grammar.悬浮提供器"
+            contentType="cn.gedobu.some.editor.med.grammar.med">
+      </hoverProvider>
+   </extension>
+   <extension
+         point="org.eclipse.ui.genericeditor.contentAssistProcessors">
+      <contentAssistProcessor
+            class="cn.gedobu.some.editor.med.grammar.内容辅助处理器"
+            contentType="cn.gedobu.some.editor.med.grammar.med">
+      </contentAssistProcessor>
+   </extension>
+   <extension
+         point="org.eclipse.core.filebuffers.documentSetup">
+      <participant
+            contentTypeId="cn.gedobu.some.editor.med.grammar.med"
+            extensions="med"
+            class="cn.gedobu.some.editor.med.grammar.ValidatorDocumentSetupParticipant">
+      </participant>
+   </extension>
+
 </plugin>

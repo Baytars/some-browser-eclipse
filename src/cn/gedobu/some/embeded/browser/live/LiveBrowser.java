@@ -211,7 +211,7 @@ public class LiveBrowser extends Browser {
 					browser.refresh();
 				}
 				catch (SWTException e) {
-					System.out.println(e.toString()+": The browser window don't seem to be the active window. "+e.getMessage());
+					System.out.println(e.toString()+": The browser window don't seem to be the active window.");
 				}
 			}
 		};
