@@ -18,14 +18,14 @@ public class 内容辅助处理器 implements IContentAssistProcessor {
 		try {
 			int 偏移所在行 = 文件.getLineOfOffset(偏移);
 			int 行头偏移 = 文件.getLineOffset(偏移所在行);
-			int 当前行文本长度 = 文件.getLineLength(偏移所在行)-1;
+//			int 当前行文本长度 = 文件.getLineLength(偏移所在行)-1;
 			// System.out.println(String.format("computeCompletionProposals: %s", 当前行文本长度));
 //			String 当前行文本 = 文件.get(行头偏移, 当前行文本长度).toLowerCase();
 			String 行首至光标文本 = 文件.get(行头偏移, 偏移-行头偏移);
 			
 			ArrayList<CompletionProposal> proposals = new ArrayList<>();
 			
-			for ( String term : Grammar.terms ) {
+			for ( String term : Grammar.getTerms() ) {
 				int endCharIndex = 行首至光标文本.lastIndexOf(term.charAt(0));
 				int overlapLength = 行首至光标文本.length() - endCharIndex;
 				if ( endCharIndex >= 0 & term.length() >= overlapLength ) {
@@ -74,38 +74,28 @@ public class 内容辅助处理器 implements IContentAssistProcessor {
 		return new ICompletionProposal[0];
 	}
 	
-	private boolean containRepeatChar(String str1, String str2) {
-		boolean result = false;
-		String shorterStr;
-		String longerStr;
-		if ( str1.length() < str2.length() ) {
-			shorterStr = str1;
-			longerStr = str2;
-		}
-		else {
-			shorterStr = str2;
-			longerStr = str1;
-		}
-		for ( Character word : shorterStr.toCharArray() ) {
-			if ( longerStr.contains(word.toString()) ) {
-				return true;
-			}
-		}
-		return result;
-	}
+//	private boolean containRepeatChar(String str1, String str2) {
+//		boolean result = false;
+//		String shorterStr;
+//		String longerStr;
+//		if ( str1.length() < str2.length() ) {
+//			shorterStr = str1;
+//			longerStr = str2;
+//		}
+//		else {
+//			shorterStr = str2;
+//			longerStr = str1;
+//		}
+//		for ( Character word : shorterStr.toCharArray() ) {
+//			if ( longerStr.contains(word.toString()) ) {
+//				return true;
+//			}
+//		}
+//		return result;
+//	}
 	
 	@Override
 	public IContextInformation[] computeContextInformation(ITextViewer viewer, int offset) {
-		IDocument 文件 = viewer.getDocument();
-		try {
-			int 偏移所在行 = 文件.getLineOfOffset(offset);
-			int 行头偏移 = 文件.getLineOffset(偏移所在行);
-			int 当前行文本长度 = offset - 行头偏移;
-			// System.out.println(String.format("computeContextInformation: %s", 当前行文本长度));
-		}
-		catch (BadLocationException e) {
-			e.printStackTrace();
-		}
 		return null;
 	}
 	
