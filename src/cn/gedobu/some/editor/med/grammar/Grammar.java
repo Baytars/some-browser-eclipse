@@ -2,6 +2,7 @@ package cn.gedobu.some.editor.med.grammar;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -28,42 +29,60 @@ public class Grammar {
 	
 	private static char[] termsPrefixes;
 	
+	static URL getRepoURL() {
+		String urlStr = "https://dev.tencent.com/u/Baytars/p/MedicalContentAssist/git/raw/master/terms.xml";
+		try {
+			return new URL(urlStr);
+		} catch (MalformedURLException repoException) {
+			System.out.println(String.format("%s: %s", repoException.toString(), urlStr));
+			return null;
+		}
+	}
+	
+	static URL getBuiltInURL() {
+		String urlStr = "platform:/plugin/SoMeEmbededBrowser/data/terms.xml";
+		try {
+			return new URL(urlStr);
+		} catch (MalformedURLException builtInException) {
+			System.out.println(String.format("%s: %s", builtInException.toString(), urlStr));
+			return null;
+		}
+	}
+	
+	static void requestTerms() {
+		InputStream inputStream = null;
+		try {
+			System.out.println("Requesting from Repo");
+			inputStream = getRepoURL().openConnection().getInputStream();
+		} catch (Exception repoException) {
+			System.out.println(String.format("%s: Request from Repo failed.", repoException.toString()));
+			try {
+				System.out.println("Requesting from built in file");
+				inputStream = getRepoURL().openConnection().getInputStream();
+			} catch (Exception builtInException) {
+				System.out.println(String.format("%s: Request from built in file failed.", builtInException.toString()));
+			}
+		}
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		try {
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document doc = builder.parse(inputStream);
+			NodeList nl = doc.getElementsByTagName("term");
+			terms = new String[nl.getLength()];
+			for ( int i=0; i<nl.getLength(); i++ ) {
+				terms[i] = innerXml(doc.getElementsByTagName("text").item(i));
+				// System.out.println(terms[i]);
+			}
+			inputStream.close();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	public static String[] getTerms() {
 		if ( terms == null ) {
-			URL url = null;
-			try {
-				url = new URL("platform:/plugin/SoMeEmbededBrowser/data/terms.xml");
-			}
-			catch (Exception e) {
-				// TODO: handle exception
-			}
-			InputStream inputStream = null;
-			try {
-				inputStream = url.openConnection().getInputStream();
-//				BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
-//				String inputLine;
-//				 
-//				while ((inputLine = in.readLine()) != null) {
-//				System.out.println(inputLine);
-//				}
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			try {
-				DocumentBuilder builder = factory.newDocumentBuilder();
-				Document doc = builder.parse(inputStream);
-				NodeList nl = doc.getElementsByTagName("term");
-				terms = new String[nl.getLength()];
-				for ( int i=0; i<nl.getLength(); i++ ) {
-					terms[i] = innerXml(doc.getElementsByTagName("text").item(i));
-					// System.out.println(terms[i]);
-				}
-				inputStream.close();
-			} catch (ParserConfigurationException | SAXException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			requestTerms();
 		}
 		return terms;
 	}
