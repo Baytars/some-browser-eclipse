@@ -1,7 +1,5 @@
 package cn.gedobu.some.embeded.browser.live;
 
-import java.net.URI;
-
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -21,20 +19,12 @@ import org.eclipse.swt.widgets.ProgressBar;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.IPartListener;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.ide.FileStoreEditorInput;
-
 import cn.gedobu.some.embeded.browser.toolbar.Toolbar;
 import cn.gedobu.some.embeded.browser.util.FileUtil;
 
 public class LiveBrowser extends Browser {
-	IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-	IWorkbenchPage page = window.getActivePage();
 	Toolbar toolbar;
 
 	public LiveBrowser(Composite parent, int style) {
@@ -126,15 +116,15 @@ public class LiveBrowser extends Browser {
 				IEditorPart activeEditor = null;
 				String pathWithProtocol = "about:blank";
 				try {
-					activeEditor = page.getActiveEditor();
+					activeEditor = FileUtil.getActivePage().getActiveEditor();
 					System.out.println("Text editor class name: " + activeEditor.getClass().getName());
-					IEditorInput input = page.getActiveEditor().getEditorInput();
+					IEditorInput input = FileUtil.getActivePage().getActiveEditor().getEditorInput();
 					
 					if ( toolbar.itemSpring.getText() == "♠" ) {
 						pathWithProtocol = "http://localhost:8080/glossaries/spring/" + input.getName();
 					}
 					else {
-						pathWithProtocol = "file://"+getFileAbsolutePath(input);
+						pathWithProtocol = "file://"+FileUtil.getFileAbsolutePath(input);
 					}
 					
 					if ( activePart.getClass().getName().equals(activeEditor.getClass().getName()) ) {
@@ -162,53 +152,38 @@ public class LiveBrowser extends Browser {
 				System.out.println("browser url: " + browser.getUrl());
 			}
 		};
-		page.addPartListener(pageListener);
+		FileUtil.getActivePage().addPartListener(pageListener);
 		return pageListener;
-	}
-	
-	String getFileAbsolutePath(IEditorInput input) {
-		String absPath = "about:blank";
-		if (input instanceof FileStoreEditorInput) {
-			URI file = ((FileStoreEditorInput)input).getURI();
-			absPath = file.getPath();
-		}
-		else if(input instanceof IFileEditorInput){
-			URI file = ((IFileEditorInput)input).getFile().getLocationURI();
-//			System.out.println(file);
-//			System.out.println(file.toString());
-//			IProject project = file.getProject(); 
-//			System.out.println(project.getFullPath().makeAbsolute().toOSString());;
-//			String relaFilePath = file.getFullPath().makeAbsolute().toOSString();
-//			String fullStr = "file://"+workspaceRoot+relaFilePath;
-//			System.out.println(fullStr);
-			absPath = file.getRawPath();
-		}
-		return absPath;
 	}
 	
 	public void bindEditorChange() {
 		System.out.println("Adding listener to editor ...");
 		
 		IPartListener pageListener = syncPageToBrowser(this);
-		IResourceChangeListener resListener = syncResourceChangeToBrowser(this);
+		IResourceChangeListener resListener = this.syncResourceChange();
 		
 		this.addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent event) {
-				page.removePartListener(pageListener);
+				FileUtil.getActivePage().removePartListener(pageListener);
 				ResourcesPlugin.getWorkspace().removeResourceChangeListener(resListener);
 			}
 		});
 	}
 	
-	IResourceChangeListener syncResourceChangeToBrowser(Browser browser) {
+	LiveBrowser getSelf() {
+		return this;
+	}
+	
+	IResourceChangeListener syncResourceChange() {
 		IResourceChangeListener resListener = new IResourceChangeListener() {
 			
 			@Override
 			public void resourceChanged(IResourceChangeEvent event) {
-				System.out.println(String.format("Resource has changed: %s", event.getType()));
+				System.out.println(String.format("type: %s", event.getType()));
+				System.out.println(String.format("flag: %s", event.getDelta().getFlags()));
 				try {
-					browser.refresh();
+					getSelf().refresh();
 				}
 				catch (SWTException e) {
 					System.out.println(e.toString()+": The browser window don't seem to be the active window.");

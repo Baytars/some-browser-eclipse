@@ -1,37 +1,22 @@
 package cn.gedobu.some.embeded.browser.toolbar;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileStore;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.dialogs.ProgressMonitorDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.dialogs.SaveAsDialog;
-import org.eclipse.ui.ide.IDE;
 import org.mozilla.interfaces.nsIDOMDocument;
 import org.mozilla.interfaces.nsIDOMElement;
 import org.mozilla.interfaces.nsIDOMWindow;
 import org.mozilla.interfaces.nsIWebBrowser;
+import org.osgi.service.prefs.BackingStoreException;
 
 import cn.gedobu.some.embeded.browser.DOMEditor;
 import cn.gedobu.some.embeded.browser.live.LiveBrowser;
 import cn.gedobu.some.embeded.browser.util.FileUtil;
+import cn.gedobu.some.embeded.browser.util.StringUtil;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -55,6 +40,8 @@ public class Toolbar extends ToolBar {
 	public ToolItem itemSpring = new ToolItem(this, SWT.PUSH);
 	
 	Text location;
+	
+	IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode("cn.gedobu.some.eclipse.prefernces.template");
 	
 	@Override
 	protected void checkSubclass() {
@@ -122,25 +109,13 @@ public class Toolbar extends ToolBar {
 				case "Open":
 					System.out.println("Opening file");
 					String activeURL = browser.getUrl();
-					File fileToOpen = new File(StringStartTrim(activeURL, "file:"));
-					openFileInDefaultEditor(fileToOpen);
+					File fileToOpen = new File(StringUtil.startTrim(activeURL, "file:"));
+					FileUtil.openInDefaultEditor(fileToOpen);
 					break;
 				case "ε":
-					final FileDialog dlg = new FileDialog(getParent().getShell(), SWT.OPEN);
-					dlg.setText("Select Template");
-					dlg.setFilterExtensions ( new String[] { "*.xml", "*html", "*.*" } );
-					final String selected = dlg.open ();
+					String selected = openTemplateSelectionDialog();
 					if ( selected != null ) {
-						System.out.println(selected);
-						SaveAsDialog fileRenameDlg = new SaveAsDialog(getParent().getShell());
-						fileRenameDlg.open();
-						IPath pathChild = fileRenameDlg.getResult ();
-						if ( pathChild != null ) {
-							saveFile(pathChild, selected);
-						}
-						else {
-							System.out.println("Child path is null.");
-						}
+						openCloneSaveDialog(selected);
 					}
 					else {
 						System.out.println("No file selected.");
@@ -187,96 +162,75 @@ public class Toolbar extends ToolBar {
 		itemSpring.addListener(SWT.Selection, listener);
 	}
 	
-	void saveFile(IPath pathChild, String pathStringMother) {
-		final IFile iFileChild = ResourcesPlugin.getWorkspace().getRoot().getFile(pathChild);
-		final File fileMother = new File(pathStringMother);
-		if (iFileChild != null) {
-			Display defaultDisplay = Display.getDefault();
-			Shell shell = defaultDisplay.getActiveShell();
-			ProgressMonitorDialog pm = new ProgressMonitorDialog(shell);
+	String openTemplateSelectionDialog() {
+		final FileDialog dlg = new FileDialog(getParent().getShell(), SWT.OPEN);
+		dlg.setText("Select Template");
+		dlg.setFilterExtensions ( new String[] { "*.xml", "*html", "*.*" } );
+		String lastSelectedLocation = preferences.node("last").get("file","");
+		if ( ! lastSelectedLocation.isEmpty() ) {
+			final File lastFile = new File(lastSelectedLocation);
+			System.out.println(String.format("Last used template is %s", lastFile.getParent()));;
+			dlg.setFilterPath(lastFile.getParent());
+		}
+		final String selected = dlg.open ();
+		if ( selected != null ) {
+			System.out.println(String.format("Selected file is %s", selected));
+			preferences.node("last").put("file", selected);
 			try {
-				pm.run(true, true, new IRunnableWithProgress() {
-					public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
-						try {
-							if (iFileChild.exists()) {
-								defaultDisplay.syncExec(new Runnable() {
-									@Override
-									public void run() {
-										MessageDialog.openError(shell, "File Already Exists", "You cannot override an existing file!");
-									}
-								});
-							}
-							else {
-								defaultDisplay.syncExec(new Runnable() {
-									@Override
-									public void run() {
-										try {
-											iFileChild.create(new FileInputStream(fileMother), true, monitor);
-											MessageDialog.openConfirm(shell, "Success", String.format("File %s generated from %s saved successfully!", pathChild.toOSString(), pathStringMother ));
-											openFileInDefaultEditor(iFileChild.getLocation().toFile());
-										} catch (FileNotFoundException
-												| CoreException e) {
-											e.printStackTrace();
-										}
-									}
-								});
-							}
-						} catch (Throwable e) {
-							throw new InvocationTargetException(e);
-						} finally {
-							monitor.done();
-						}
-					}
-
-				});
-			} catch (InvocationTargetException e) {
-				System.out.println(e.getCause());
-			} catch (InterruptedException e) {
-				System.out.println(e);
+				preferences.flush();
+			} catch (BackingStoreException e) {
+				System.out.println("Save last template location failed.");
 			}
 		}
+		return selected;
 	}
 	
-	void openFileInDefaultEditor(File fileToOpen) {
-		System.out.println(fileToOpen.getPath());
-		
-		if ( fileToOpen.exists() && fileToOpen.isFile() ) {
-			IFileStore fileStore = EFS.getLocalFileSystem().getStore(fileToOpen.toURI());
-			try {
-				IDE.openEditorOnFileStore(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage(), fileStore);
+	void openCloneSaveDialog(String clonePath) {
+		FileDialog fileRenameDlg = new FileDialog(getParent().getShell(), SWT.SAVE);
+		String lastSavedDir = preferences.node("last").get("dir", "");
+		if ( ! lastSavedDir.isEmpty() ) {
+			System.out.println(String.format("Last saved file is %s", lastSavedDir));
+			File lastSavedFile = new File(lastSavedDir);
+			File ptFile = lastSavedFile.getParentFile();
+			if ( lastSavedFile.exists() ) {
+				fileRenameDlg.setFilterPath(ptFile.getAbsolutePath());
+				
+				// set next number, in addition
+				String fileName = lastSavedFile.getName();
+				String[] fileNameParts = fileName.split("\\.");
+				System.out.println(String.format("File name is %s, split length is %s", fileName, fileNameParts.length));
+				try {
+					String fileNameNoExt = fileNameParts[0];
+					String fileNameExt = fileNameParts[1];
+					int fileNumber = Integer.valueOf(fileNameNoExt) + 1;
+					fileRenameDlg.setFileName(String.format("%s.%s", fileNumber, fileNameExt));
+				}
+				catch (Exception e) {
+					System.out.println(e.toString());
+				}
 			}
-			catch (Exception e) {
-				System.out.println("OpenEditor Error: "+e.toString());
+			else {
+				if ( ptFile.exists() ) {
+					fileRenameDlg.setFilterPath(ptFile.getAbsolutePath());
+				}
+				else {
+					// set filter to the active project path
+					fileRenameDlg.setFilterPath(FileUtil.getActiveFileParentPath());
+				}
+			}
+		}
+		String pathChild = fileRenameDlg.open();
+		if ( pathChild != null ) {
+			FileUtil.save(pathChild, clonePath);
+			preferences.node("last").put("dir", new File(pathChild).getAbsolutePath());
+			try {
+				preferences.flush();
+			} catch (BackingStoreException e) {
+				System.out.println("Save last saved location failed.");
 			}
 		}
 		else {
-		    System.out.println("File does not exist!");
+			System.out.println("Child path is null.");
 		}
-	}
-	
-	/**
-		* 去掉指定字符串的开头的指定字符
-		* @param stream 原始字符串
-		* @param trim 要删除的字符串
-		* @return
-	*/
-	String StringStartTrim(String stream, String trim) {
-		// null或者空字符串的时候不处理
-		if (stream == null || stream.length() == 0 || trim == null || trim.length() == 0) {
-			return stream;
-		}
-		// 要删除的字符串结束位置
-		int end;
-		// 正规表达式
-		String regPattern = "[" + trim + "]*+";
-		Pattern pattern = Pattern.compile(regPattern, Pattern.CASE_INSENSITIVE);
-		// 去掉原始字符串开头位置的指定字符
-		Matcher matcher = pattern.matcher(stream);
-		if (matcher.lookingAt()) {
-			end = matcher.end();
-			stream = stream.substring(end);
-		}
-		// 返回处理后的字符串
-		return stream;
 	}
 }
