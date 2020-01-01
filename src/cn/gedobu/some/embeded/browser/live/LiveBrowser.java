@@ -183,7 +183,9 @@ public class LiveBrowser extends Browser {
 				System.out.println(String.format("type: %s", event.getType()));
 				System.out.println(String.format("flag: %s", event.getDelta().getFlags()));
 				try {
-					getSelf().refresh();
+					if ( ! toolbar.isLocked ) {
+						getSelf().refresh();
+					}
 				}
 				catch (SWTException e) {
 					System.out.println(e.toString()+": The browser window don't seem to be the active window.");
