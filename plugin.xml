@@ -39,11 +39,16 @@
 	</extension>
 	
 	<extension point="org.eclipse.wst.sse.ui.completionProposal">
+		<proposalCategory
+			icon="icons/sample.png"
+			id="cn.gedobu.some.editor.med.proposalCategory.medicalHistory"
+			name="Medical History">
+		</proposalCategory>
 		<proposalComputer
-				activate="false"
-				categoryId="org.eclipse.wst.xml.ui.proposalCategory.xmlTemplates"
+				activate="true"
+				categoryId="cn.gedobu.some.editor.med.proposalCategory.medicalHistory"
 				class="cn.gedobu.some.editor.med.contentassist.XMLTemplatesCompletionProposalComputer"
-				id="org.eclipse.wst.xml.ui.proposalComputer.xmlTemplates">
+				id="cn.gedobu.some.editor.med.proposalComputer.medicalHistory">
 			<contentType
 				id="org.eclipse.core.runtime.xml">
 			</contentType>
