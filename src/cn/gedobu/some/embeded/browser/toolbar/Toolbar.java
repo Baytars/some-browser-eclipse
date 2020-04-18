@@ -1,6 +1,9 @@
 package cn.gedobu.some.embeded.browser.toolbar;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.swt.SWT;
@@ -109,8 +112,13 @@ public class Toolbar extends ToolBar {
 				case "Open":
 					System.out.println("Opening file");
 					String activeURL = browser.getUrl();
-					File fileToOpen = new File(StringUtil.startTrim(activeURL, "file:"));
-					FileUtil.openInDefaultEditor(fileToOpen);
+					try {
+						URL cleanURL = new URL(activeURL);
+						File fileToOpen = new File(StringUtil.startTrim(cleanURL.getPath(), "file:"));
+						FileUtil.openInDefaultEditor(fileToOpen);
+					} catch (MalformedURLException e) {
+						System.out.println(e.getClass().getName());
+					}
 					break;
 				case "ε":
 					String selected = openTemplateSelectionDialog();
