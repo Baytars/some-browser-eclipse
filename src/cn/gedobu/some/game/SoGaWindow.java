@@ -1,108 +1,88 @@
 package cn.gedobu.some.game;
 
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.TabFolder;
-import org.eclipse.swt.widgets.TabItem;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.Item;
 import org.eclipse.swt.widgets.TableItem;
 
+import java.sql.*;
+
 public class SoGaWindow {
+	Composite parent;
+	CardTabs cardTabs;
+	
 	public SoGaWindow(Composite parent) {
+		this.parent = parent;
 		GridLayout gridLayout = new GridLayout();
-		parent.setLayout(gridLayout);
+		this.parent.setLayout(gridLayout);
 		
-		Button btnButton = new Button(parent, SWT.PUSH);
-		btnButton.setText("抽卡");
+		addButton();
+		addTabFolder();
+	}
+	
+	private void addButton() {
+		Button btn = new Button(parent, SWT.PUSH);
+		btn.setText("抽卡");
 		
-		final TabFolder tabFolder = new TabFolder(parent, SWT.BORDER);
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-		tabItem.setText("式神情报");
-		
-		Table tb = new Table(tabFolder, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
-		String[] titles = {
-			"键",
-			"值"
-		};
-		
-		GridData data = new GridData(GridData.FILL_BOTH);
-		tabFolder.setLayoutData(data);
-		tb.setLayoutData(data);
-		
-		for(String title : titles) {
-			TableColumn column = new TableColumn(tb, SWT.NONE);
-			column.setText(title);
-		}
-		
-		tb.setHeaderVisible(true);
-		tb.setLinesVisible(true);
-		
-		String[][] items = {
-			{
-				"稀有度", "N"
-			},
-			{
-				"名称", "null"
-			},
-			{
-				"等级", "1"
-			},
-			{
-				"星级", "2"
-			},
-			{
-				"经验", "0"
-			},
-			{
-				"攻击", "0"
-			},
-			{
-				"生命", "0"
-			},
-			{
-				"防御", "0"
-			},
-			{
-				"速度", "0"
-			},
-			{
-				"暴击", "0%"
-			},
-			{
-				"暴击伤害", "0%"
-			},
-			{
-				"效果命中", "0%"
-			},
-			{
-				"效果抵抗", "0%"
-			},
-			{
-				"技能1", "null"
-			},
-			{
-				"技能2", "null"
-			},
-			{
-				"技能3", "null"
+		SelectionListener listener = new SelectionListener() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent arg0) {
+				System.out.println("抽卡中……\n");
+				System.out.println(String.format("Current workspace:\n%s", Platform.getLocation()));
+				Connection c = null;
+				Statement stmt = null;
+				try {
+					Class.forName("org.sqlite.JDBC");
+					c = DriverManager.getConnection(String.format("jdbc:sqlite:%s", Platform.getLocation().toString()+"/SoGa/SoGa.db"));
+					c.setAutoCommit(false);
+					System.out.println("Opened database successfully!");
+					
+					stmt = c.createStatement();
+					ResultSet rs = stmt.executeQuery("select * from cards;");
+					while (rs.next()) {
+						String name = rs.getString("name");
+						int value = rs.getInt("value");
+						
+						CardInfoTable tb = cardTabs.cardInfoTable;
+						for (TableItem item : tb.getItems()) {
+							
+							switch (item.getText()) {
+							case "稀有度":
+								item.setText(1, Integer.toString(value));
+								break;
+							case "名称":
+								item.setText(1, name);
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					
+					c.close();
+				}
+				catch (Exception e) {
+					System.err.println(e.getClass().getName()+": "+e.getMessage());
+					System.exit(0);
+				}
+				System.out.println("Operation done successfully!");
+			}
+			
+			@Override
+			public void widgetDefaultSelected(SelectionEvent arg0) {
+				System.out.println("widgetDefaultSelected");
 			}
 		};
-		
-		for(String[] field : items) {
-			TableItem item = new TableItem(tb, SWT.NONE);
-			item.setText(field);
-		}
-		
-		for (int i=0; i<titles.length; i++) {
-			tb.getColumn(i).pack();
-		}
-		
-		tb.pack();
-		tabItem.setControl(tb);
-		tabFolder.pack();
+		btn.addSelectionListener(listener);
+	}
+	
+	private void addTabFolder() {
+		this.cardTabs = new CardTabs(parent, SWT.BORDER);
 	}
 }
