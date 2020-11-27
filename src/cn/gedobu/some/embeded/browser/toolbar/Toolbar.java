@@ -10,22 +10,15 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
-import org.mozilla.interfaces.nsIDOMDocument;
-import org.mozilla.interfaces.nsIDOMElement;
-import org.mozilla.interfaces.nsIDOMWindow;
-import org.mozilla.interfaces.nsIWebBrowser;
 import org.osgi.service.prefs.BackingStoreException;
 
-import cn.gedobu.some.embeded.browser.DOMEditor;
 import cn.gedobu.some.embeded.browser.live.LiveBrowser;
 import cn.gedobu.some.embeded.browser.util.FileUtil;
 import cn.gedobu.some.embeded.browser.util.StringUtil;
 
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class Toolbar extends ToolBar {
@@ -130,21 +123,21 @@ public class Toolbar extends ToolBar {
 					}
 					break;
 				case "🔍":
-					nsIWebBrowser webBrowser = (nsIWebBrowser)browser.getWebBrowser();
-					nsIDOMWindow domWindow = webBrowser.getContentDOMWindow ();
-					nsIDOMDocument document = domWindow.getDocument ();
-					nsIDOMElement documentElement = document.getDocumentElement ();
-					
-					final Display display = new Display ();
-					final Shell shell = new Shell (display);
-					DOMEditor domEditor = new DOMEditor (shell);
-					domEditor.populate (documentElement);
-					
-					shell.open ();
-					while (!shell.isDisposed ()) {
-						if (!display.readAndDispatch ()) display.sleep ();
-					}
-					display.dispose ();
+//					nsIWebBrowser webBrowser = (nsIWebBrowser)browser.getWebBrowser();
+//					nsIDOMWindow domWindow = webBrowser.getContentDOMWindow ();
+//					nsIDOMDocument document = domWindow.getDocument ();
+//					nsIDOMElement documentElement = document.getDocumentElement ();
+//					
+//					final Display display = new Display ();
+//					final Shell shell = new Shell (display);
+//					DOMEditor domEditor = new DOMEditor (shell);
+//					domEditor.populate (documentElement);
+//					
+//					shell.open ();
+//					while (!shell.isDisposed ()) {
+//						if (!display.readAndDispatch ()) display.sleep ();
+//					}
+//					display.dispose ();
 					break;
 				case "♤":
 					isSpringDevMode = true;

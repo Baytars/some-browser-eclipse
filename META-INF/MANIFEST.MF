@@ -5,44 +5,38 @@ Bundle-SymbolicName: SoMeEmbededBrowser;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: cn.gedobu.some.embeded.browser.Activator
 Require-Bundle: javax.inject,
- org.eclipse.osgi,
- org.eclipse.jface,
- org.eclipse.e4.ui.model.workbench,
- org.eclipse.e4.ui.di,
- org.eclipse.e4.ui.services,
- org.eclipse.e4.core.di.annotations,
  org.eclipse.core.runtime,
- org.eclipse.jface.text;bundle-version="3.15.300",
- org.eclipse.ui.editors;bundle-version="3.12.0",
- org.eclipse.ui.genericeditor;bundle-version="1.1.500",
+ org.eclipse.jface.text,
  org.eclipse.ui.ide,
  org.eclipse.wst.xml.ui,
  org.eclipse.wst.sse.ui,
- org.eclipse.ui
+ org.eclipse.ui,
+ org.eclipse.wst.sse.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8,
  JavaSE-11
 Automatic-Module-Name: SoMeEmbededBrowser
-Import-Package: javax.annotation;version="1.2.0",
- org.eclipse.core.filesystem,
- org.eclipse.core.resources,
- org.eclipse.swt.chromium,
- org.eclipse.ui,
- org.eclipse.ui.dialogs,
- org.eclipse.ui.ide,
- org.eclipse.ui.navigator,
- org.eclipse.wst.sse.core.internal.provisional,
- org.eclipse.wst.sse.core.internal.provisional.text,
- org.eclipse.wst.sse.ui,
- org.eclipse.wst.xml.core.internal.provisional.document,
- org.eclipse.wst.xml.ui,
- org.eclipse.wst.xml.ui.internal.tabletree,
- org.mozilla.interfaces
 Bundle-ActivationPolicy: lazy
-Export-Package: cn.gedobu.some.embeded.browser,
+Export-Package: cn.gedobu.some.editor.med.contentassist,
+ cn.gedobu.some.editor.med.grammar,
+ cn.gedobu.some.embeded.browser,
  cn.gedobu.some.embeded.browser.live,
  cn.gedobu.some.embeded.browser.live.legacy,
  cn.gedobu.some.embeded.browser.parts,
  cn.gedobu.some.embeded.browser.toolbar,
- cn.gedobu.some.embeded.browser.util
+ cn.gedobu.some.embeded.browser.util,
+ cn.gedobu.some.game,
+ cn.gedobu.some.game.buttons,
+ cn.gedobu.some.game.db,
+ cn.gedobu.some.game.db.table,
+ cn.gedobu.some.med.editor.editors
 Bundle-ClassPath: data/sqlite-jdbc-3.30.1.jar,
  .
+Import-Package: javax.annotation,
+ javax.persistence,
+ org.eclipse.core.filesystem,
+ org.eclipse.core.resources,
+ org.eclipse.swt.chromium,
+ org.eclipse.ui,
+ org.eclipse.ui.ide,
+ org.eclipse.wst.xml.core.internal.provisional.document,
+ org.eclipse.wst.xml.ui.internal.tabletree
