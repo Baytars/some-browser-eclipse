@@ -33,7 +33,7 @@ public class SummonButton extends ButtonBase {
 					Class.forName("org.sqlite.JDBC");
 					// c = DriverManager.getConnection(String.format("jdbc:sqlite:%s", Platform.getLocation().toString()+"/SoGa/SoGa.db"));
 					String urlStr = "data/SoGa.db";
-					Bundle bundle = Platform.getBundle("SoMeEmbededBrowser");
+					Bundle bundle = Platform.getBundle("some.embedded.browser");
 					c = DriverManager.getConnection(String.format("jdbc:sqlite:%s", FileLocator.toFileURL(bundle.getResource(urlStr))));
 					c.setAutoCommit(false);
 					System.out.println("Opened database successfully!");

@@ -40,7 +40,7 @@ public class Grammar {
 	}
 	
 	static URL getBuiltInURL() {
-		String urlStr = "platform:/plugin/SoMeEmbededBrowser/data/terms.xml";
+		String urlStr = "platform:/plugin/some.embedded.browser/data/terms.xml";
 		try {
 			return new URL(urlStr);
 		} catch (MalformedURLException builtInException) {

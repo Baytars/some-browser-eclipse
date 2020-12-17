@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SoMeEmbededBrowser
-Bundle-SymbolicName: SoMeEmbededBrowser;singleton:=true
+Bundle-Name: SoMe Embedded Browser
+Bundle-SymbolicName: some.embedded.browser;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: cn.gedobu.some.embeded.browser.Activator
 Require-Bundle: javax.inject,
@@ -14,7 +14,7 @@ Require-Bundle: javax.inject,
  org.eclipse.wst.sse.core
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8,
  JavaSE-11
-Automatic-Module-Name: SoMeEmbededBrowser
+Automatic-Module-Name: some.embedded.browser
 Bundle-ActivationPolicy: lazy
 Export-Package: cn.gedobu.some.editor.med.contentassist,
  cn.gedobu.some.editor.med.grammar,
@@ -40,3 +40,4 @@ Import-Package: javax.annotation,
  org.eclipse.ui.ide,
  org.eclipse.wst.xml.core.internal.provisional.document,
  org.eclipse.wst.xml.ui.internal.tabletree
+Bundle-Vendor: GeDoBu

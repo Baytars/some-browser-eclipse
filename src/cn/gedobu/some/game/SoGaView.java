@@ -71,7 +71,7 @@ public class SoGaView extends ViewPart {
 		viewer.setLabelProvider(new ViewLabelProvider());
 
 		// Create the help context id for the viewer's control
-		workbench.getHelpSystem().setHelp(viewer.getControl(), "SoMeEmbededBrowser.viewer");
+		workbench.getHelpSystem().setHelp(viewer.getControl(), "some.embedded.browser.viewer");
 		getSite().setSelectionProvider(viewer);
 		makeActions();
 		hookContextMenu();
