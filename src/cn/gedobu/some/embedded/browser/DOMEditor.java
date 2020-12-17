@@ -1,4 +1,4 @@
-package cn.gedobu.some.embeded.browser;
+package cn.gedobu.some.embedded.browser;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TreeEditor;

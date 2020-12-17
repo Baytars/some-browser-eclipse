@@ -1,4 +1,4 @@
-package cn.gedobu.some.embeded.browser;
+package cn.gedobu.some.embedded.browser;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;

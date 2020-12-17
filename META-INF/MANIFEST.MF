@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SoMe Embedded Browser
 Bundle-SymbolicName: some.embedded.browser;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Bundle-Activator: cn.gedobu.some.embeded.browser.Activator
+Bundle-Activator: cn.gedobu.some.embedded.browser.Activator
 Require-Bundle: javax.inject,
  org.eclipse.core.runtime,
  org.eclipse.jface.text,
@@ -18,7 +18,7 @@ Automatic-Module-Name: some.embedded.browser
 Bundle-ActivationPolicy: lazy
 Export-Package: cn.gedobu.some.editor.med.contentassist,
  cn.gedobu.some.editor.med.grammar,
- cn.gedobu.some.embeded.browser,
+ cn.gedobu.some.embedded.browser,
  cn.gedobu.some.embeded.browser.live,
  cn.gedobu.some.embeded.browser.live.legacy,
  cn.gedobu.some.embeded.browser.parts,
